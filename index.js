@@ -2,7 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+// const bcrypt = require("bcrypt");
+const bcrypt = require('bcryptjs');
 const mongoose = require("mongoose");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -14,14 +15,11 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      // "https://endearing-fenglisu-dad95b.netlify.app",
-    ],
+    origin: ["http://localhost:5173", "https://quickpay-cash.netlify.app/"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
+    credentials: true,
+  })
 );
 
 // Database Connection
@@ -35,8 +33,10 @@ mongoose
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5000",
-    methods: ["GET", "POST"]
+    origin: ["http://localhost:5173", "https://quickpay-cash.netlify.app/"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   }
 });
 
@@ -358,15 +358,15 @@ app.get("/api/transactions/history", verifyToken, async (req, res) => {
       recipientId: tx.recipientId ? { _id: tx.recipientId._id, mobile: tx.recipientId.mobile } : null,
       amount: tx.amount,
       status: tx.status || "Completed",
-      timestamp: tx.createdAt ? new Date(tx.createdAt).toISOString() : new Date().toISOString(), 
+      timestamp: tx.createdAt ? new Date(tx.createdAt).toISOString() : new Date().toISOString(),
       transactionType:
         tx.senderId?._id.toString() === userId.toString()
           ? tx.transactionType === "cash-out"
             ? "cash-out"
             : "sent"
           : tx.transactionType === "cash-in"
-          ? "cash-in"
-          : "received"
+            ? "cash-in"
+            : "received"
     }));
 
     res.status(200).json(formattedTransactions);
@@ -748,6 +748,11 @@ app.get("/api/agent/transactions", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch transactions", error });
   }
 });
+
+app.get("/", (req, res) => {
+  res.send("QuickPay Server");
+});
+
 
 app.listen(port, () => {
   console.log(`QuickPay Server is running on port ${port}`);
